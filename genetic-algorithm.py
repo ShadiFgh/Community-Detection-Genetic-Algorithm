@@ -1,11 +1,13 @@
 import numpy as np
 import random
 import networkx as nx
+import matplotlib.pyplot as plt
 
 num_parents = 10
 num_children = 5
 num_mutation = 3
 total = num_parents + num_children + num_mutation
+max_iter = 5
 
 with open("sample dataset.txt") as file:
     # number of nodes
@@ -70,7 +72,7 @@ def delta(chromosome):
     c = np.zeros((n,n))
     for i in range(0, n):
         for j in range(0, n):
-            if nx.has_path(G, i+1, j+1) and nx.shortest_path_length(graph1, i+1, j+1) < 2:
+            if nx.has_path(G, i+1, j+1):
                 c[i][j] = 1
     return c
 
@@ -144,16 +146,25 @@ def mutation(chromosomes):
         chromosome[gene] = random.choice(find_neighbor(graph, n)[gene])
         return chromosome
 
+
+
 chromosomes = create_chromosomes(graph, n, num_parents)
 profit = modularity_property(graph, n, chromosomes)
-for iter in range(0, 5):
+max_profit = []
+for iter in range(0, max_iter):
     for i in range(0, num_children):
         p = choose_parents(profit)
         chromosomes.append(crossover(p))
     for i in range(0, num_mutation):
         chromosomes.append(mutation(chromosomes))
     profit = modularity_property(graph, n, chromosomes)
-    print(max(profit))
+    best_profit = max(profit)
+    max_profit.append(best_profit)
+    # print(best_profit)
+    best_arg = np.argmax(profit)
+    best_chromosome = chromosomes[best_arg]
+    # print(best_arg)
+    # print(best_chromosome)
     profitarg = np.argsort(profit.reshape((1, len(profit))))
     #next generation's population
     new_chromosomes = []
@@ -161,3 +172,12 @@ for iter in range(0, 5):
         temp1 = (total - 1) - k
         new_chromosomes.append(chromosomes[profitarg[0][temp1]])
     chromosomes = new_chromosomes
+
+
+print("best chromosome:", best_chromosome)
+print("best profit:", best_profit)
+
+x = np.array(range(0, max_iter))
+y = np.array(max_profit).reshape((1, len(max_profit)))[0]
+plt.plot(x, y, 'ro')
+plt.show()
