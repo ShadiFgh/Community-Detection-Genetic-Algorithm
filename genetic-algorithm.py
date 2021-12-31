@@ -4,7 +4,8 @@ import networkx as nx
 
 num_parents = 10
 num_children = 5
-total = num_parents + num_children
+num_mutation = 3
+total = num_parents + num_children + num_mutation
 
 with open("sample dataset.txt") as file:
     # number of nodes
@@ -15,6 +16,11 @@ with open("sample dataset.txt") as file:
 graph = np.loadtxt("sample dataset.txt", skiprows=1, dtype=int)
 # number of edges
 m =len(graph)
+
+graph1 = nx.empty_graph()
+for i in range(0, len(graph)):
+    graph1.add_edge(graph[i][0], graph[i][1])
+
 
 # constructs adjacency matrix for the given graph with n nodes
 def adjacency_matrix(graph, n):
@@ -64,11 +70,10 @@ def delta(chromosome):
     c = np.zeros((n,n))
     for i in range(0, n):
         for j in range(0, n):
-            if nx.has_path(G, i+1, j+1):
+            if nx.has_path(G, i+1, j+1) and nx.shortest_path_length(graph1, i+1, j+1) < 2:
                 c[i][j] = 1
     return c
 
-# print(delta([2, 3, 2, 1, 6, 7, 6, 5]))
 
 def modularity_property(graph, n, chromosomes):
     adj = adjacency_matrix(graph, n)
@@ -99,7 +104,7 @@ def choose_parents(profit):
     pn.append(1.0)
 
     tmp1 = np.random.rand()
-    p1 = 0;
+    p1 = 0
     while (tmp1 > pn[p1]):
         p1 = p1 + 1
     p1_index = p1
@@ -131,9 +136,28 @@ def crossover(p):
     # print(random_vector)
     return chid
 
+def mutation(chromosomes):
+    for i in range(num_mutation):
+        index = random.randint(0, num_children - 1)
+        chromosome = chromosomes[num_parents + index]
+        gene = random.randint(0, n - 1)
+        chromosome[gene] = random.choice(find_neighbor(graph, n)[gene])
+        return chromosome
 
 chromosomes = create_chromosomes(graph, n, num_parents)
 profit = modularity_property(graph, n, chromosomes)
-for i in range(0, num_children):
-    p = choose_parents(profit)
-    chromosomes.append(crossover(p))
+for iter in range(0, 5):
+    for i in range(0, num_children):
+        p = choose_parents(profit)
+        chromosomes.append(crossover(p))
+    for i in range(0, num_mutation):
+        chromosomes.append(mutation(chromosomes))
+    profit = modularity_property(graph, n, chromosomes)
+    print(max(profit))
+    profitarg = np.argsort(profit.reshape((1, len(profit))))
+    #next generation's population
+    new_chromosomes = []
+    for k in range(0, num_parents):
+        temp1 = (total - 1) - k
+        new_chromosomes.append(chromosomes[profitarg[0][temp1]])
+    chromosomes = new_chromosomes
