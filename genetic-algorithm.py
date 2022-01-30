@@ -7,7 +7,7 @@ num_parents = 10
 num_children = 5
 num_mutation = 3
 total = num_parents + num_children + num_mutation
-max_iter = 5
+max_iter = 70
 
 with open("sample dataset.txt") as file:
     # number of nodes
@@ -19,17 +19,19 @@ graph = np.loadtxt("sample dataset.txt", skiprows=1, dtype=int)
 # number of edges
 m =len(graph)
 
-graph1 = nx.empty_graph()
-for i in range(0, len(graph)):
-    graph1.add_edge(graph[i][0], graph[i][1])
+# graph1 = nx.empty_graph()
+# for i in range(0, len(graph)):
+#     graph1.add_edge(graph[i][0], graph[i][1])
 
 
 # constructs adjacency matrix for the given graph with n nodes
 def adjacency_matrix(graph, n):
     adj = np.zeros((n, n))
+
     for i in range(0, len(graph)):
         adj[graph[i][0] - 1][graph[i][1] - 1] = 1
         adj[graph[i][1] - 1][graph[i][0] - 1] = 1
+
     return adj
 
 # computing degrees of nodes
@@ -74,6 +76,7 @@ def delta(chromosome):
         for j in range(0, n):
             if nx.has_path(G, i+1, j+1):
                 c[i][j] = 1
+
     return c
 
 
@@ -86,7 +89,7 @@ def modularity_property(graph, n, chromosomes):
         sigma = 0
         for i in range(0, n):
             for j in range(0, n):
-                if i != j:
+
                     sigma = sigma + ((adj[i][j] - ((degree[i] * degree[j]) / (2 * m))) * c[i][j])
         profit.append(sigma/(2 * m))
     return np.array(profit)
@@ -139,12 +142,11 @@ def crossover(p):
     return chid
 
 def mutation(chromosomes):
-    for i in range(num_mutation):
-        index = random.randint(0, num_children - 1)
-        chromosome = chromosomes[num_parents + index]
-        gene = random.randint(0, n - 1)
-        chromosome[gene] = random.choice(find_neighbor(graph, n)[gene])
-        return chromosome
+    index = random.randint(0, num_children - 1)
+    chromosome = chromosomes[num_parents + index]
+    gene = random.randint(0, n - 1)
+    chromosome[gene] = random.choice(find_neighbor(graph, n)[gene])
+    return chromosome
 
 
 
@@ -152,6 +154,7 @@ chromosomes = create_chromosomes(graph, n, num_parents)
 profit = modularity_property(graph, n, chromosomes)
 max_profit = []
 for iter in range(0, max_iter):
+    profit = modularity_property(graph, n, chromosomes)
     for i in range(0, num_children):
         p = choose_parents(profit)
         chromosomes.append(crossover(p))
@@ -160,7 +163,7 @@ for iter in range(0, max_iter):
     profit = modularity_property(graph, n, chromosomes)
     best_profit = max(profit)
     max_profit.append(best_profit)
-    # print(best_profit)
+    print(best_profit)
     best_arg = np.argmax(profit)
     best_chromosome = chromosomes[best_arg]
     # print(best_arg)
